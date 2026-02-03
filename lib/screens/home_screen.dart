@@ -29,8 +29,8 @@ class HomeScreen extends StatelessWidget {
             _buildHomeCard(
               context,
               title: "Magos",
-              icon: Icons.,
-              color: Colors.deepPurple,
+              icon: Icons.rowing,
+              color: Colors.blue,
               target: const WizardListScreen(),
             ),
 
@@ -38,7 +38,7 @@ class HomeScreen extends StatelessWidget {
             _buildHomeCard(
               context,
               title: "Casas",
-              icon: Icons.shield,
+              icon: Icons.castle,
               color: Colors.redAccent,
               target: const HouseListScreen(),
             ),
@@ -47,8 +47,8 @@ class HomeScreen extends StatelessWidget {
             _buildHomeCard(
               context,
               title: "Varitas",
-              icon: Icons.flash_on,
-              color: Colors.brown,
+              icon: Icons.auto_fix_high,
+              color: const Color.fromARGB(255, 246, 105, 54),
               target: const WandListScreen(),
             ),
           ],
