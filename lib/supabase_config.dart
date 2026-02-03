@@ -5,7 +5,7 @@ class SupabaseConfig {
   static Future<void> init() async {
     await Supabase.initialize(
       url: 'https://oootpwyyhakzpkbmmwbf.supabase.co',
-      anonKey: 'YOUR_ANON_KEY',
+      anonKey: 'sb_publishable_u5dbt2QMgv28v-RPKZLJ5Q_Dxr-GZ4f',
     );
   }
 
