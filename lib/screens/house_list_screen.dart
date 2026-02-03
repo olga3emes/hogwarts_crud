@@ -36,6 +36,7 @@ class _HouseListScreenState extends State<HouseListScreen> {
         child: const Icon(Icons.add),
         onPressed: () => Navigator.push(
           context,
+          //Aquí hay que enviarle un House h nulo para que sepa que es nuevo.
           MaterialPageRoute(builder: (_) => HouseFormScreen()),
         ),
       ),
