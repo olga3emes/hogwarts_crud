@@ -7,8 +7,8 @@ import '../services/house_service.dart';
 import '../services/wand_service.dart';
 
 class WizardFormScreen extends StatefulWidget {
-  final Wizard? wizard; 
-  final VoidCallback onSaved;
+  final Wizard? wizard;         // Si viene un mago, es edición
+  final VoidCallback onSaved;   // Para refrescar la pantalla anterior
 
   const WizardFormScreen({super.key, this.wizard, required this.onSaved});
 
@@ -17,43 +17,45 @@ class WizardFormScreen extends StatefulWidget {
 }
 
 class _WizardFormScreenState extends State<WizardFormScreen> {
-  // Controladores de texto
+  // Controladores
   final nameCtrl = TextEditingController();
   final ageCtrl = TextEditingController();
+
+  // Clave de Form para validación
+  final formKey = GlobalKey<FormState>();
 
   // Servicios
   final wizardService = WizardService();
   final houseService = HouseService();
   final wandService = WandService();
 
-  // Listas de selección
+  // Listas
   List<House> houses = [];
   List<Wand> wands = [];
 
-  // Selecciones actuales
+  // Valores seleccionados
   String? selectedHouseId;
   String? selectedWandId;
 
   @override
   void initState() {
     super.initState();
+    _loadData();
+  }
 
-    // Cargamos las listas en paralelo
-    _loadLists();
+  /// Cargar casas, varitas y datos iniciales
+  Future<void> _loadData() async {
+    houses = await houseService.getHouses();
+    wands = await wandService.getWands();
 
-    // Si es edición, precargar valores
     if (widget.wizard != null) {
       nameCtrl.text = widget.wizard!.name;
       ageCtrl.text = widget.wizard!.age.toString();
+
       selectedHouseId = widget.wizard!.houseId;
       selectedWandId = widget.wizard!.wandId;
     }
-  }
 
-  // Cargar casas y varitas desde Supabase
-  Future<void> _loadLists() async {
-    houses = await houseService.getHouses();
-    wands = await wandService.getWands();
     setState(() {});
   }
 
@@ -63,90 +65,142 @@ class _WizardFormScreenState extends State<WizardFormScreen> {
 
     return Scaffold(
       appBar: AppBar(title: Text(isEdit ? "Editar Mago" : "Nuevo Mago")),
+
       body: Padding(
         padding: const EdgeInsets.all(16),
-        child: ListView(
-          children: [
-            // Nombre del mago
-            TextField(
-              controller: nameCtrl,
-              decoration: const InputDecoration(labelText: "Nombre"),
+
+        // CONTENEDOR general que pediste
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF4F4F4),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey.shade300),
+          ),
+
+          child: Form(
+            key: formKey,  // Para validación
+
+            child: ListView(
+              children: [
+                // -------------------------------
+                //  NOMBRE (validado)
+                // -------------------------------
+                TextFormField(
+                  controller: nameCtrl,
+                  decoration: const InputDecoration(labelText: "Nombre"),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return "El nombre es obligatorio";
+                    }
+                    return null;
+                  },
+                ),
+
+                const SizedBox(height: 20),
+
+                // -------------------------------
+                //  EDAD (validada)
+                // -------------------------------
+                TextFormField(
+                  controller: ageCtrl,
+                  decoration: const InputDecoration(labelText: "Edad"),
+                  keyboardType: TextInputType.number,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return "La edad es obligatoria";
+                    }
+                    final age = int.tryParse(value);
+                    if (age == null || age <= 0) {
+                      return "Introduce una edad válida";
+                    }
+                    return null;
+                  },
+                ),
+
+                const SizedBox(height: 20),
+
+                // -------------------------------
+                //  DROPDOWN DE CASAS
+                // -------------------------------
+                DropdownMenu<String>(
+                  initialSelection: selectedHouseId,
+                  label: const Text("Casa"),
+                  dropdownMenuEntries: houses
+                      .map(
+                        (h) => DropdownMenuEntry<String>(
+                          value: h.id,
+                          label: h.name,
+                        ),
+                      )
+                      .toList(),
+                  onSelected: (value) {
+                    setState(() {
+                      selectedHouseId = value;
+                    });
+                  },
+                ),
+
+                const SizedBox(height: 20),
+
+                // -------------------------------
+                //  DROPDOWN DE VARITAS
+                // -------------------------------
+                DropdownMenu<String>(
+                  initialSelection: selectedWandId,
+                  label: const Text("Varita"),
+                  dropdownMenuEntries: wands
+                      .map(
+                        (w) => DropdownMenuEntry<String>(
+                          value: w.id,
+                          label: "${w.wood} - ${w.core}",
+                        ),
+                      )
+                      .toList(),
+                  onSelected: (value) {
+                    setState(() {
+                      selectedWandId = value;
+                    });
+                  },
+                ),
+
+                const SizedBox(height: 30),
+
+                // -------------------------------
+                //  BOTÓN GUARDAR
+                // -------------------------------
+                ElevatedButton(
+                  child: Text(isEdit ? "Guardar cambios" : "Crear mago"),
+                  onPressed: () async {
+                    if (formKey.currentState!.validate()) {
+                      final name = nameCtrl.text;
+                      final age = int.parse(ageCtrl.text);
+
+                      if (isEdit) {
+                        await wizardService.updateWizard(
+                          widget.wizard!.id,
+                          name,
+                          age,
+                          selectedHouseId,
+                          selectedWandId,
+                        );
+                      } else {
+                        await wizardService.addWizard(
+                          name,
+                          age,
+                          selectedHouseId,
+                          selectedWandId,
+                        );
+                      }
+
+                      widget.onSaved();
+                      Navigator.pop(context);
+                    }
+                  },
+                ),
+              ],
             ),
-
-            // Edad del mago
-            TextField(
-              controller: ageCtrl,
-              decoration: const InputDecoration(labelText: "Edad"),
-              keyboardType: TextInputType.number,
-            ),
-
-            const SizedBox(height: 20),
-
-            // Selección de casa --- Su PMV es un DropdownButtonFormField, que es un widget que muestra un dropdown con opciones.
-            // El value es la opción seleccionada, items son las opciones disponibles (en este caso, las casas),
-            // onChanged se llama cuando el usuario selecciona una opción, y decoration es para ponerle un label.
-            DropdownButtonFormField<String>(
-              //¿Y cómo sabe cuál es la casa seleccionada? Pues con el value, que es el id de la casa seleccionada.
-              // Entonces, cuando el usuario elige una opción, onChanged actualiza selectedHouseId
-              // con el id de la casa elegida. Pone deprecated porque el value no puede ser nulo, 
-              //pero lo dejamos así para que funcione al crear un mago nuevo, que no tiene casa asignada.
-              value: selectedHouseId,
-              items: houses
-                  .map((h) => DropdownMenuItem(
-                        value: h.id,
-                        child: Text(h.name),
-                      ))
-                  .toList(),
-              onChanged: (v) => setState(() => selectedHouseId = v),
-              decoration: const InputDecoration(labelText: "Casa"),
-            ),
-
-            const SizedBox(height: 20),
-
-            // Selección de varita = otro DropdownButtonFormField, pero con las varitas. 
-            //Funciona igual que el de casas, pero con wands en vez de houses.
-            DropdownButtonFormField<String>(
-              value: selectedWandId,
-              items: wands
-                  .map((w) => DropdownMenuItem(
-                        value: w.id,
-                        child: Text("${w.wood} - ${w.core}"),
-                      ))
-                  .toList(),
-              onChanged: (v) => setState(() => selectedWandId = v),
-              decoration: const InputDecoration(labelText: "Varita"),
-            ),
-
-            const SizedBox(height: 20),
-
-            ElevatedButton(
-              child: Text(isEdit ? "Guardar cambios" : "Crear mago"),
-              onPressed: () async {
-                final name = nameCtrl.text;
-                final age = int.tryParse(ageCtrl.text) ?? 0;
-
-                if (isEdit) {
-                  await wizardService.updateWizard(
-                    widget.wizard!.id,
-                    name,
-                    age,
-                    selectedHouseId,
-                    selectedWandId,
-                  );
-                } else {
-                  await wizardService.addWizard(
-                    name,
-                    age,
-                    selectedHouseId,
-                    selectedWandId,
-                  );
-                }
-
-                widget.onSaved();
-                Navigator.pop(context);
-              },
-            )
-          ],
+          ),
         ),
       ),
     );

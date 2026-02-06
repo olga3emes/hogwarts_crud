@@ -78,7 +78,8 @@ class HomeScreen extends StatelessWidget {
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            color: color.withOpacity(0.15),
+            color: color.withValues(alpha: 0.3), //transparencia 30%
+            //esto es para que el fondo del botón sea un color pastel, con poca opacidad
           ),
 
           child: Column(
