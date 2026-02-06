@@ -129,14 +129,12 @@ class _WizardFormScreenState extends State<WizardFormScreen> {
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: Colors.white, // Fondo blanco limpio
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.grey.shade300),
             ),
 
             child: Form(
               key: formKey,
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch, // 👈 CLAVE PARA ANCHO COMPLETO
+                crossAxisAlignment: CrossAxisAlignment.stretch, 
 
                 children: [
                   // Nombre
