@@ -37,7 +37,7 @@ class _HouseListScreenState extends State<HouseListScreen> {
         onPressed: () => Navigator.push(
           context,
           //Aquí hay que enviarle un House h nulo para que sepa que es nuevo.
-          MaterialPageRoute(builder: (_) => HouseFormScreen()),
+          MaterialPageRoute(builder: (_) => HouseFormScreen(house: null, onSaved: _refresh)),
         ),
       ),
       body: FutureBuilder(
@@ -72,7 +72,7 @@ class _HouseListScreenState extends State<HouseListScreen> {
                 onTap: () => Navigator.push(
                   context,
                   //Para enviar datos a otra pantalla, hay que meterle luego House h.
-                  MaterialPageRoute(builder: (_) => HouseFormScreen()),
+                  MaterialPageRoute(builder: (_) => HouseFormScreen( house: h, onSaved: _refresh)),
                 ),
               );
             },
