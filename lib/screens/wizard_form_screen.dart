@@ -23,13 +23,10 @@ class _WizardFormScreenState extends State<WizardFormScreen> {
 
   // Clave de Form para validación
   final formKey = GlobalKey<FormState>();
-
-  // Servicios
   final wizardService = WizardService();
   final houseService = HouseService();
   final wandService = WandService();
 
-  // Listas
   List<House> houses = [];
   List<Wand> wands = [];
 
