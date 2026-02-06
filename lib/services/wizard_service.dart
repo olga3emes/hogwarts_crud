@@ -4,13 +4,16 @@ import '../models/wizard.dart';
 class WizardService {
   final _db = SupabaseConfig.client;
 
-  // Obtener todos los magos
+  // Obtener magos junto con su casa y su varita
   Future<List<Wizard>> getWizards() async {
-    final response = await _db.from('wizards').select();
+    final response = await _db
+        .from('wizards')
+        .select('id, name, age, house_id, wand_id, houses(name), wands(core, wood)')
+        .order('name');
+
     return response.map((e) => Wizard.fromMap(e)).toList();
   }
 
-  // Crear mago con relaciones
   Future<void> addWizard(String name, int age, String? houseId, String? wandId) async {
     await _db.from('wizards').insert({
       'name': name,
@@ -20,7 +23,6 @@ class WizardService {
     });
   }
 
-  // Editar mago
   Future<void> updateWizard(
     String id,
     String name,
@@ -36,7 +38,6 @@ class WizardService {
     }).eq('id', id);
   }
 
-  // Eliminar mago
   Future<void> deleteWizard(String id) async {
     await _db.from('wizards').delete().eq('id', id);
   }
