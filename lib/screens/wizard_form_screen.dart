@@ -7,8 +7,8 @@ import '../services/house_service.dart';
 import '../services/wand_service.dart';
 
 class WizardFormScreen extends StatefulWidget {
-  final Wizard? wizard; // Si viene un mago, es edición
-  final VoidCallback onSaved; // Para refrescar la pantalla anterior
+  final Wizard? wizard;
+  final VoidCallback onSaved;
 
   const WizardFormScreen({super.key, this.wizard, required this.onSaved});
 
@@ -17,187 +17,215 @@ class WizardFormScreen extends StatefulWidget {
 }
 
 class _WizardFormScreenState extends State<WizardFormScreen> {
-  // Controladores
+// Controladores para los campos de texto
   final nameCtrl = TextEditingController();
   final ageCtrl = TextEditingController();
-
-  // Clave de Form para validación
+  // Servicios para manejar datos de magos, casas y varitas
+ 
   final formKey = GlobalKey<FormState>();
+ 
   final wizardService = WizardService();
   final houseService = HouseService();
   final wandService = WandService();
 
+//Lista de casas y varitas para los dropdowns
   List<House> houses = [];
   List<Wand> wands = [];
 
-  // Valores seleccionados
+//Variables para guardar la selección actual de los dropdowns
   String? selectedHouseId;
   String? selectedWandId;
 
   @override
   void initState() {
     super.initState();
-    _loadData();
+    loadData();
   }
 
-  /// Cargar casas, varitas y datos iniciales
-  Future<void> _loadData() async {
+  Future<void> loadData() async {
     houses = await houseService.getHouses();
     wands = await wandService.getWands();
 
     if (widget.wizard != null) {
-      nameCtrl.text = widget.wizard!.name;
-      ageCtrl.text = widget.wizard!.age.toString();
-
-      selectedHouseId = widget.wizard!.houseId;
-      selectedWandId = widget.wizard!.wandId;
+      final w = widget.wizard!;
+      nameCtrl.text = w.name;
+      ageCtrl.text = w.age.toString();
+      selectedHouseId = w.houseId;
+      selectedWandId = w.wandId;
     }
 
-    setState(() {});
+    if (mounted) setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
     final isEdit = widget.wizard != null;
 
+    // Tema local para dar formato tipo TextField a los DropdownMenu
+    final dropdownTheme = Theme.of(context).copyWith(
+      inputDecorationTheme: const InputDecorationTheme(
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.all(Radius.circular(12)),
+        ),
+      ),
+    );
+
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(title: Text(isEdit ? "Editar Mago" : "Nuevo Mago")),
 
+      // ------------------------------
+      // Botón FIJO abajo
+      // ------------------------------
+      bottomNavigationBar: SafeArea(
+        minimum: const EdgeInsets.all(16),
+        child: SizedBox(
+          height: 50,
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: () async {
+              if (!formKey.currentState!.validate()) return;
+
+              final name = nameCtrl.text;
+              final age = int.parse(ageCtrl.text);
+
+              if (isEdit) {
+                await wizardService.updateWizard(
+                  widget.wizard!.id,
+                  name,
+                  age,
+                  selectedHouseId,
+                  selectedWandId,
+                );
+              } else {
+                await wizardService.addWizard(
+                  name,
+                  age,
+                  selectedHouseId,
+                  selectedWandId,
+                );
+              }
+
+              if (!mounted) return;
+              widget.onSaved();
+              Navigator.of(context).pop();
+            },
+            child: Text(isEdit ? "Guardar cambios" : "Crear mago"),
+          ),
+        ),
+      ),
+
+      // ------------------------------
+      // FORMULARIO SCROLLEABLE
+      // ------------------------------
       body: Padding(
         padding: const EdgeInsets.all(16),
 
-        // CONTENEDOR general del formulario, con fondo y bordes redondeados
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF4F4F4),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color.fromARGB(255, 247, 247, 247)),
-          ),
+        child: SingleChildScrollView(
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white, // Fondo blanco limpio
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.grey.shade300),
+            ),
 
-          child: Form(
-            key: formKey, // Para validación
+            child: Form(
+              key: formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch, // 👈 CLAVE PARA ANCHO COMPLETO
 
-            child: ListView(
-              children: [
-                // -------------------------------
-                //  NOMBRE (validado)
-                // -------------------------------
-                TextFormField(
-                  controller: nameCtrl,
-                  decoration: const InputDecoration(labelText: "Nombre"),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return "El nombre es obligatorio";
-                    }
-                    return null;
-                  },
-                ),
+                children: [
+                  // Nombre
+                  TextFormField(
+                    controller: nameCtrl,
+                    decoration: const InputDecoration(
+                      labelText: "Nombre",
+                      filled: true,
+                      fillColor: Colors.white,
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (v) =>
+                        v == null || v.trim().isEmpty ? "Obligatorio" : null,
+                  ),
 
-                const SizedBox(height: 20),
+                  const SizedBox(height: 20),
 
-                // -------------------------------
-                //  EDAD (validada)
-                // -------------------------------
-                TextFormField(
-                  controller: ageCtrl,
-                  decoration: const InputDecoration(labelText: "Edad"),
-                  keyboardType: TextInputType.number,
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return "La edad es obligatoria";
-                    }
-                    final age = int.tryParse(value);
-                    if (age == null || age <= 0) {
-                      return "Introduce una edad válida";
-                    }
-                    return null;
-                  },
-                ),
+                  // Edad
+                  TextFormField(
+                    controller: ageCtrl,
+                    decoration: const InputDecoration(
+                      labelText: "Edad",
+                      filled: true,
+                      fillColor: Colors.white,
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.number,
+                    validator: (v) {
+                      if (v == null || v.trim().isEmpty) return "Obligatorio";
+                      final n = int.tryParse(v);
+                      return (n == null || n <= 0) ? "Edad inválida" : null;
+                    },
+                  ),
 
-                const SizedBox(height: 20),
+                  const SizedBox(height: 24),
 
-                // -------------------------------
-                //  DROPDOWN DE CASAS
-                // -------------------------------
-                DropdownMenu<String>(
-                  width: double.infinity,
-                  initialSelection: selectedHouseId,
-                  label: const Text("Casa"),
-                  dropdownMenuEntries: houses
-                      .map(
-                        (h) => DropdownMenuEntry<String>(
-                          value: h.id,
-                          label: h.name,
-                        ),
-                      )
-                      .toList(),
-                  onSelected: (value) {
-                    setState(() {
-                      selectedHouseId = value;
-                    });
-                  },
-                ),
+                  // CASA — sin expanded y a ancho completo
+                  Theme(
+                    data: dropdownTheme,
+                    child: DropdownMenu<String>(
+                      initialSelection: selectedHouseId,
+                      label: const Text("Casa"),
 
-                const SizedBox(height: 20),
+                      menuStyle: MenuStyle(
+                        backgroundColor: WidgetStateProperty.all(Colors.white),
+                        padding: WidgetStateProperty.all(const EdgeInsets.all(8)),
+                      ),
 
-                // -------------------------------
-                //  DROPDOWN DE VARITAS
-                // -------------------------------
-                DropdownMenu<String>(
-                  width: double.infinity,
-                  initialSelection: selectedWandId,
-                  label: const Text("Varita"),
-                  dropdownMenuEntries: wands
-                      .map(
-                        (w) => DropdownMenuEntry<String>(
-                          value: w.id,
-                          label: "${w.wood} - ${w.core}",
-                        ),
-                      )
-                      .toList(),
-                  onSelected: (value) {
-                    setState(() {
-                      selectedWandId = value;
-                    });
-                  },
-                ),
+                      dropdownMenuEntries: houses
+                          .map((h) =>
+                              DropdownMenuEntry<String>(value: h.id, label: h.name))
+                          .toList(),
 
-                const SizedBox(height: 30),
+                      onSelected: (value) =>
+                          setState(() => selectedHouseId = value),
+                    ),
+                  ),
 
-                // -------------------------------
-                //  BOTÓN GUARDAR
-                // -------------------------------
-                ElevatedButton(
-                  child: Text(isEdit ? "Guardar cambios" : "Crear mago"),
-                  onPressed: () async {
-                    if (formKey.currentState!.validate()) {
-                      final name = nameCtrl.text;
-                      final age = int.parse(ageCtrl.text);
+                  const SizedBox(height: 24),
 
-                      if (isEdit) {
-                        await wizardService.updateWizard(
-                          widget.wizard!.id,
-                          name,
-                          age,
-                          selectedHouseId,
-                          selectedWandId,
-                        );
-                      } else {
-                        await wizardService.addWizard(
-                          name,
-                          age,
-                          selectedHouseId,
-                          selectedWandId,
-                        );
-                      }
+                  // VARITA — igual estilo
+                  Theme(
+                    data: dropdownTheme,
+                    child: DropdownMenu<String>(
+                      initialSelection: selectedWandId,
+                      label: const Text("Varita"),
 
-                      widget.onSaved();
-                      Navigator.pop(context);
-                    }
-                  },
-                ),
-              ],
+                      menuStyle: MenuStyle(
+                        backgroundColor: WidgetStateProperty.all(Colors.white),
+                        padding: WidgetStateProperty.all(const EdgeInsets.all(8)),
+                      ),
+
+                      dropdownMenuEntries: wands
+                          .map(
+                            (w) => DropdownMenuEntry<String>(
+                              value: w.id,
+                              label: "${w.wood} - ${w.core}",
+                            ),
+                          )
+                          .toList(),
+
+                      onSelected: (value) =>
+                          setState(() => selectedWandId = value),
+                    ),
+                  ),
+
+                  const SizedBox(height: 80), // deja hueco para el botón fijo
+                ],
+              ),
             ),
           ),
         ),
