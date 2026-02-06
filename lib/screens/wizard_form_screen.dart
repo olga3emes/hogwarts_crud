@@ -7,8 +7,8 @@ import '../services/house_service.dart';
 import '../services/wand_service.dart';
 
 class WizardFormScreen extends StatefulWidget {
-  final Wizard? wizard;         // Si viene un mago, es edición
-  final VoidCallback onSaved;   // Para refrescar la pantalla anterior
+  final Wizard? wizard; // Si viene un mago, es edición
+  final VoidCallback onSaved; // Para refrescar la pantalla anterior
 
   const WizardFormScreen({super.key, this.wizard, required this.onSaved});
 
@@ -69,17 +69,17 @@ class _WizardFormScreenState extends State<WizardFormScreen> {
       body: Padding(
         padding: const EdgeInsets.all(16),
 
-        // CONTENEDOR general que pediste
+        // CONTENEDOR general del formulario, con fondo y bordes redondeados
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: const Color(0xFFF4F4F4),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.grey.shade300),
+            border: Border.all(color: const Color.fromARGB(255, 247, 247, 247)),
           ),
 
           child: Form(
-            key: formKey,  // Para validación
+            key: formKey, // Para validación
 
             child: ListView(
               children: [
@@ -124,6 +124,7 @@ class _WizardFormScreenState extends State<WizardFormScreen> {
                 //  DROPDOWN DE CASAS
                 // -------------------------------
                 DropdownMenu<String>(
+                  width: double.infinity,
                   initialSelection: selectedHouseId,
                   label: const Text("Casa"),
                   dropdownMenuEntries: houses
@@ -147,6 +148,7 @@ class _WizardFormScreenState extends State<WizardFormScreen> {
                 //  DROPDOWN DE VARITAS
                 // -------------------------------
                 DropdownMenu<String>(
+                  width: double.infinity,
                   initialSelection: selectedWandId,
                   label: const Text("Varita"),
                   dropdownMenuEntries: wands
