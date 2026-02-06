@@ -49,7 +49,7 @@ class _WandFormScreenState extends State<WandFormScreen> {
             TextField(
               controller: lengthCtrl,
               decoration: const InputDecoration(labelText: "Longitud (cm)"),
-              keyboardType: TextInputType.number,
+              keyboardType: TextInputType.number,//esto para el móvil saca el teclado numérico
             ),
             const SizedBox(height: 20),
 
